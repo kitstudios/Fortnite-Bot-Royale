@@ -1,0 +1,33 @@
+{
+  "fortnite": {
+    "skin": "Renegade Raider",
+    "backpack": "",
+    "emote": "Windmill Floss",
+    "level": "100",
+    "banner": "BRS18_DarkTrio",
+    "add_users": true,
+    "join_users": true,
+    "leave_after_success": true,
+    "leave_time": 300000,
+    "join_message": "🔥 You have 5 minutes to ready up and get in a bot lobby!",
+    "invite_status": "Fortnite Bot Royale | Invite me!",
+    "invite_onlinetype": "online",
+    "inuse_status": "Fortnite Bot Royale | Busy at the moment",
+    "inuse_onlinetype": "xa",
+    "whitelist": [
+      "1"
+    ]
+  },
+
+  
+  "system": {
+    "bot_loading_message": "Bot is loading!",
+    "web_message": "L use this for uptime",
+    "reload": false,
+    "reload_time": 5400000,
+    "bot_version": "8.2"
+  }
+
+
+  
+}
