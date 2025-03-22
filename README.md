@@ -1,12 +1,7 @@
-# Made this public because some skids like to steal my work then slap "Made by some random ahh guy" in the repo.
-
-
-## Actual website for this project:
-### https://bl.ajaxfnc.com/
-
-# ---------------------
-
-## This the V1 of the NexBL bot.
-### This code is sorta old, but you can easily fix it (if your not ironweb10 ofc)
-
+# Fortnite Bot Royale
+This is based on AjaxFNC's [NexBL V1](https://github.com/AjaxFNC-YT/NexBL-V1/), which was pretty broken lol
+<br>
+This is very broken too, expect instability.
+<br>
+This is not meant for use on any production server, and it will most likely never get updated again after this month, enjoy.
 
