@@ -14,7 +14,8 @@ This is not meant for use on any production server, and it will most likely neve
 If any bugs are found, report in the issue tracker, thanks!
 <br>
 # Authorization code
-__**Make sure to be signed into the Epic Games account that will serve as the bot account**__
+<u>**Make sure to be signed into the Epic Games account that will serve as the bot account**</u>
+<br>
 To get an authorization code, click on this click [right here](https://www.epicgames.com/id/api/redirect?clientId=3f69e56c7649492c8cc29f1af08a8a12&responseType=code), and copy the "authorizationCode" value into the console.
 <br>
 
