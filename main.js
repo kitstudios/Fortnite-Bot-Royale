@@ -243,6 +243,11 @@ async function sleep(seconds) {
           await client.party.me.sendPatch({ 'Default:LobbyState_j': loadout });
           break;
         }
+        case "BattleRoyaleView": {
+            var loadout = client.party.me.meta.set("Default:LobbyState_j", { "LobbyState": { "hasPreloadedAthena": true } });
+            await client.party.me.sendPatch({ 'Default:LobbyState_j': loadout });
+            break;
+          }
         case "BattleRoyaleMatchmaking": {
           if (bIsMatchmaking) {
             console.log('Members has started matchmaking!'.green);
