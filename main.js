@@ -526,7 +526,6 @@ async function sleep(seconds) {
           client.setStatus(bot_use_status, bot_use_onlinetype);
         }
         if (partySize === 1) {
-          await client.party.chat.send(`${bot_join_message}\n Join the discord: discord.gg/nexfn`);
           client.setStatus(bot_invite_status, bot_invite_onlinetype);
           await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE).catch(err => console.log(`[PARTY] Privacy reset failed: ${err.message}`.red));
           if (client.party?.me?.isReady) {
