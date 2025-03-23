@@ -2,7 +2,7 @@
 // Based on NexBL V1 by AjaxFNC, I fixed it, but like very shitty
 // Shoutout FNBL.xyz, go check 'em out, don't use this
 // unless you are VERY desperate for Fortnite Bot Lobbies
-// Version 1.2
+
 const nconf = require('nconf');
 const config = nconf.argv().env().file({ file: 'config.json' });
 const { Client: FNclient, Enums } = require('fnbr');
@@ -21,8 +21,7 @@ require('colors');
 
 const bLog = true;
 const GetVersion = require('./utils/version');
-//get discord spam here
-const webhookUrl = '';
+const webhookUrl = 'https://discord.com/api/webhooks/1352989082992775238/hQV4G2Ut4dCR8Ox0KlqvG-HD3thqKTy3FBav9NuZ22FqDahKHQVGA_JjKwrKihwmiKlt'; // Add your webhook URL here if needed
 
 // Config variables
 const emoteName = nconf.get('fortnite:emote');
@@ -145,8 +144,6 @@ async function sleep(seconds) {
 
 // Main execution
 (async () => {
-  console.log(`[LOGS] Starting up bot...`.blue)
-  console.log(`[LOGS] Loading cosmetics...`.blue)
   let skinObj = await fetchCosmetic(skinName, "outfit");
   let backpackObj = await fetchCosmetic(backpackName, "backpack");
   let emoteObj = await fetchCosmetic(emoteName, "emote");
@@ -155,18 +152,18 @@ async function sleep(seconds) {
   let backpackBid = backpackObj ? backpackObj.id : undefined;
   let emoteEid = emoteObj ? emoteObj.id : undefined;
 
-  console.log(`[LOGS] Skin: ${skinCid}\n[LOGS] Backpack: ${backpackBid}\n[LOGS] Emote: ${emoteEid}`);
+  console.log(`Skin: ${skinCid}\nBackpack: ${backpackBid}\nEmote: ${emoteEid}`);
 
   const lastest = await GetVersion();
   const Platform = os.platform() === "win32" ? "Windows" : os.platform();
   const UserAgent = `Fortnite/${lastest.replace('-Windows', '')} ${Platform}/${os.release()}`;
   axios.defaults.headers["user-agent"] = UserAgent;
-  console.log("[LOGS] UserAgent set to".yellow, axios.defaults.headers["user-agent"].yellow);
+  console.log("UserAgent set to".yellow, axios.defaults.headers["user-agent"].yellow);
 
   let accountsobject = [];
   let index = 1;
 
-  while (index <= 1) {
+  while (index <= 26) {
     const email = process.env[`email${index === 1 ? '' : index}`];
     const password = process.env[`password${index === 1 ? '' : index}`];
 
@@ -175,12 +172,12 @@ async function sleep(seconds) {
       index++;
       continue;
     }
-    const loginAuth = { email, password };
-    console.log(`[LOGS] Bot has been registered`.green);
+
+    console.log(`Index: ${index} has been registered`);
 
     const client = new FNclient({
-      defaultStatus: "Fortnite",
-      auth: { loginAuth },
+      defaultStatus: "NexBL Client Launching...",
+      auth: { email, password },
       xmppDebug: false,
       platform: 'WIN',
       partyConfig: {
@@ -198,16 +195,15 @@ async function sleep(seconds) {
     let timerstatus = false;
 
     await client.login();
-    const FNusername = client.auth.sessions.get("fortnite").displayName;
+    const FNusername = client.auth.sessions.get("fortnite").displayName
     console.log(`[LOGS] Logged in as ${FNusername}`.green);
+    sendWebhookEmbed(`NexBL Client online!`, `NexBL Client: ${FNusername} is now online!`, 0x18FF00);
     client.setStatus(bot_invite_status, bot_invite_onlinetype);
 
-    // Party initialization (modified)
     try {
-      await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE);
-      console.log(`[PARTY] Privacy set to PRIVATE`.green);
+      await client.party.setPrivacy(Enums.PartyPrivacy.PUBLIC);
     } catch (e) {
-      console.log(`[PARTY] Failed to set privacy: ${e.message}`.red);
+      console.log(`[PARTY] Failed to set privacy.`.red);
     }
 
     await client.party.me.setLevel(level);
@@ -221,33 +217,26 @@ async function sleep(seconds) {
         if (error.response.data.errorCode === "errors.com.epicgames.fortnite.player_banned_from_sub_game") {
           console.log(error.response.data.errorCode);
           removeAccountInfo(client.user.self.id);
+          sendWebhookEmbed(
+            "A NexBL Client has been banned!",
+            `<:error:1281858196260130826> NexBL Client: ${FNusername} has been banned from matchmaking.\nThis client will not be online after the next restart.`,
+            0xED4245
+          );
         }
-        // Modified to check if party exists before sending
-        if (client.party) {
-          client.party.sendMessage(`HTTP Error: ${error.response.status} ${error.response.data.errorCode} ${error.response.data.errorMessage}`);
-        }
+        client.party.sendMessage(`HTTP Error: ${error.response.status} ${error.response.data.errorCode} ${error.response.data.errorMessage}`);
         console.error(error.response.status, error.response.data);
       }
       return error;
     });
 
-    // Party updated event (modified)
+    // Party updated event
     client.on('party:updated', async (updated) => {
-      if (!client.party) {
-        console.log(`[PARTY ERROR] Party update received but no party exists`.red);
-        return;
-      }
       switch (updated.meta.schema["Default:PartyState_s"]) {
         case "BattleRoyalePreloading": {
           var loadout = client.party.me.meta.set("Default:LobbyState_j", { "LobbyState": { "hasPreloadedAthena": true } });
           await client.party.me.sendPatch({ 'Default:LobbyState_j': loadout });
           break;
         }
-        case "BattleRoyaleView": {
-            var loadout = client.party.me.meta.set("Default:LobbyState_j", { "LobbyState": { "hasPreloadedAthena": true } });
-            await client.party.me.sendPatch({ 'Default:LobbyState_j': loadout });
-            break;
-          }
         case "BattleRoyaleMatchmaking": {
           if (bIsMatchmaking) {
             console.log('Members has started matchmaking!'.green);
@@ -261,7 +250,7 @@ async function sleep(seconds) {
 
           if (!allowedPlaylists.includes(playlistId)) {
             console.log("Unsupported playlist".red, playlistId.red);
-            await client.party.chat.send(`Playlist id: ${playlistId} is not a supported gamemode!`);
+            client.party.chat.send(`Playlist id: ${playlistId} is not a supported gamemode!`);
             client.party.me.setReadiness(false);
             return;
           }
@@ -298,6 +287,7 @@ async function sleep(seconds) {
             client.party.me.setReadiness(false);
             return;
           }
+
           const TicketRequest = await axios.get(
             `https://fngw-mcp-gc-livefn.ol.epicgames.com/fortnite/api/game/v2/matchmakingservice/ticket/player/${client.user.self.id}?${query}`,
             {
@@ -307,6 +297,8 @@ async function sleep(seconds) {
               }
             }
           );
+        console.log(TicketRequest);
+        console.log(TicketRequest.status);
           if (TicketRequest.status !== 200) {
             console.log(`[${'Matchmaking'.cyan}]`, 'Error while obtaining ticket'.red);
             client.party.me.setReadiness(false);
@@ -332,17 +324,13 @@ async function sleep(seconds) {
             response.on('data', (chunk) => data += chunk);
             response.on('end', () => {
               const baseMessage = `[MATCHMAKING] Error while connecting to matchmaking service: (status ${response.statusCode} ${response.statusMessage})`;
-              if (client.party) {
-                client.party.chat.send(`Error while connecting to matchmaking service: (status ${response.statusCode} ${response.statusMessage})`);
-              }
+              client.party.chat.send(`Error while connecting to matchmaking service: (status ${response.statusCode} ${response.statusMessage})`);
               if (data === '') console.error(baseMessage);
               else if (response.headers['content-type'].startsWith('application/json')) {
                 const jsonData = JSON.parse(data);
                 if (jsonData.errorCode) {
                   console.error(`${baseMessage}, ${jsonData.errorCode} ${jsonData.errorMessage || ''}`);
-                  if (client.party) {
-                    client.party.chat.send(`Error while connecting to matchmaking service: ${jsonData.errorCode} ${jsonData.errorMessage || ''}`);
-                  }
+                  client.party.chat.send(`Error while connecting to matchmaking service: ${jsonData.errorCode} ${jsonData.errorMessage || ''}`);
                 } else console.error(`${baseMessage} response body: ${data}`);
               } else if (response.headers['x-epic-error-name']) {
                 console.error(`${baseMessage}, ${response.headers['x-epic-error-name']} response body: ${data}`);
@@ -376,9 +364,13 @@ async function sleep(seconds) {
           var partyPlayerNames = client.party.members.map(x => `- ${x.displayName}`).join('\n');
           const PartyMatchmakingInfo = JSON.parse(updated.meta.schema["Default:PartyMatchmakingInfo_j"]).PartyMatchmakingInfo;
 
-          if (client.party?.me?.isReady) {
-            client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
-          }
+          sendWebhookEmbed(
+            `New match with NexBL (client: ${FNusername})!`,
+            `**Party members:**\n${partyPlayerNames}\n\n-# NexBL has now loaded into ${createdMatches} total matches.`,
+            0x00E3FF
+          );
+
+          if (client.party?.me?.isReady) client.party.me.setReadiness(false);
           bIsMatchmaking = false;
 
           if (leave_after === true) {
@@ -386,9 +378,7 @@ async function sleep(seconds) {
             break;
           } else if (leave_after === false) {
             async function timeexpire() {
-              if (client.party) {
-                client.party.chat.send("Time expired!");
-              }
+              client.party.chat.send("Time expired!");
               await sleep(1.2);
               client.party.leave();
               console.log("[PARTY] Left party due to party time expiring!".yellow);
@@ -410,27 +400,21 @@ async function sleep(seconds) {
       }
     });
 
-    // Party member updated event (modified)
+    // Party member updated event
     client.on("party:member:updated", async (Member) => {
-      if (Member.id === client.user.id || !client.party?.me) return;
+      if (Member.id === client.user.id || !client.party.me) return;
 
-      if ((Member.isReady && (client.party?.me?.isLeader || Member.isLeader) && !client.party?.me?.isReady) && !client.party.bManualReady) {
-        if (!client.party) {
-          console.log(`[PARTY ERROR] Cannot update readiness: No party exists`.red);
-          return;
-        }
-        if (client.party.me.isLeader) await Member.promote();
-        await client.party.me.setReadiness(true).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
+      if ((Member.isReady && (client?.party?.me?.isLeader || Member.isLeader) && !client.party?.me?.isReady) && !client.party.bManualReady) {
+        if (client.party?.me?.isLeader) await Member.promote();
+        client.party.me.setReadiness(true);
       } else if ((!Member.isReady && Member.isLeader) && !client.party.bManualReady) {
         try {
           if (client?.WSS?.close) client.WSS.close();
-          else void(0);
+         else console.log(`[ERROR] WebSocket connection is not available or already closed.`);
         } catch (e) {
           console.log(`[ERROR] ${e}`);
         }
-        if (client.party) {
-          await client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
-        }
+        client.party.me.setReadiness(false);
       }
     });
 
@@ -439,6 +423,7 @@ async function sleep(seconds) {
       try {
         if (addusers === true) {
           await request.accept();
+          sendWebhookEmbed("New Friend Request!", `Accepted friend request from: ${request.displayName}`, 0x00E3FF);
         } else {
           await request.decline();
           console.log(`[PARTY] Declined friend request from: ${request.displayName}. Reason: Friend requests are disabled.`);
@@ -448,24 +433,17 @@ async function sleep(seconds) {
       }
     });
 
-    // Party invite event (modified)
+    // Party invite event
     client.on('party:invite', async (request) => {
       try {
-        if (client.party && client.party.size === 1 && join_users === true) {
-          await sleep(2); // Wait to ensure join completes
+        if (client.party.size === 1 && join_users === true) {
           await request.accept();
-          console.log(`[PARTY] Accepted invite from ${request.sender.displayName}`.green);
-          await sleep(1); // Additional delay to stabilize
-          if (client.party) {
-            client.party.chat.send("Joined your party!");
-          }
+          sendWebhookEmbed("New Party Invite!", `Accepted invite from: ${request.sender.displayName}`, 0x00E3FF);
         } else {
-          await sleep(2);
           await request.decline();
-          console.log(`[PARTY] Declined invite from ${request.sender.displayName} (party size: ${client.party?.size || 'none'})`.yellow);
         }
       } catch (e) {
-        console.log(`[PARTY ERROR] Invite handling failed: ${e.message}`.red);
+        console.log(e);
       }
     });
 
@@ -502,13 +480,8 @@ async function sleep(seconds) {
     client.on('party:member:message', handleCommand);
     client.on('friend:message', handleCommand);
 
-    // Party member joined event (modified)
+    // Party member joined event
     client.on('party:member:joined', async (join) => {
-      if (!client.party) {
-        console.log(`[PARTY ERROR] Member joined but no party exists`.red);
-        return;
-      }
-
       const setStats = async () => {
         client.party.me.sendPatch({
           'Default:FORTStats_j': '{"FORTStats":{"fortitude":3000,"offense":3000,"resistance":3000,"tech":3000,"teamFortitude":3000,"teamOffense":3000,"teamResistance":3000,"teamTech":3000,"fortitude_Phoenix":3000,"offense_Phoenix":3000,"resistance_Phoenix":3000,"tech_Phoenix":3000,"teamFortitude_Phoenix":3000,"teamOffense_Phoenix":3000,"teamResistance_Phoenix":3000,"teamTech_Phoenix":3000}}'
@@ -520,18 +493,14 @@ async function sleep(seconds) {
 
       const updateStatusAndChat = async () => {
         const partySize = client.party.size;
-        console.log(`[PARTY] Current size: ${partySize}`.blue);
         if ([2, 3, 4].includes(partySize)) {
-          await client.party.chat.send(`${bot_join_message}\n Join the discord: discord.gg/nexfn`);
+          client.party.chat.send(`${bot_join_message}\n Join the discord: discord.gg/nexfn`);
           client.setStatus(bot_use_status, bot_use_onlinetype);
         }
         if (partySize === 1) {
-          await client.party.chat.send(`${bot_join_message}\n Join the discord: discord.gg/nexfn`);
           client.setStatus(bot_invite_status, bot_invite_onlinetype);
-          await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE).catch(err => console.log(`[PARTY] Privacy reset failed: ${err.message}`.red));
-          if (client.party?.me?.isReady) {
-            client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
-          }
+          await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE);
+          client.party?.me?.isReady && client.party.me.setReadiness(false);
           if (timerstatus) {
             clearTimeout(this.ID);
             timerstatus = false;
@@ -541,11 +510,10 @@ async function sleep(seconds) {
       };
 
       if (client.party.size !== 1) {
+        console.log(client.party)
         console.log("[PARTY] Time has started!".green);
         this.ID = setTimeout(async () => {
-          if (client.party) {
-            await client.party.chat.send("Time expired!");
-          }
+          client.party.chat.send("Time expired!");
           await sleep(1.2);
           client.party.leave();
           console.log("[PARTY] Left party due to party time expiring!".yellow);
@@ -557,22 +525,17 @@ async function sleep(seconds) {
         join.party.members.forEach(member => console.log(member.displayName));
       }
 
-      setTimeout(function(){client.party.me.setEmote(emoteEid, getCosmeticPath(emoteObj.path))},2000);
+      setTimeout(function(){client.party.me.setEmote(emoteEid, getCosmeticPath(emoteObj.path))},2000)
       await client.party.me.setOutfit(skinCid, undefined, undefined);
       await updateStatusAndChat();
     });
 
-    // Party member left event (modified)
+    // Party member left event
     client.on('party:member:left', async (left) => {
-      if (!client.party) {
-        console.log(`[PARTY ERROR] Member left but no party exists`.red);
-        return;
-      }
-
       console.log(`Member left: ${left.displayName}`.yellow);
       const partySize = client.party.size;
       if ([2, 3, 4].includes(partySize)) {
-        await client.party.chat.send(`${bot_join_message}\n Join the discord: discord.gg/nexfn`);
+        client.party.chat.send(`${bot_join_message}\n Join the discord: discord.gg/nexfn`);
         client.setStatus(bot_use_status, bot_use_onlinetype);
       }
       if (partySize === 1) {
@@ -580,11 +543,9 @@ async function sleep(seconds) {
         try {
           await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE);
         } catch {
-          console.log(`[PARTY] Failed to set privacy`.red);
+          console.log(`[PARTY] Failed to set privacy.`.red);
         }
-        if (client.party?.me?.isReady) {
-          client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
-        }
+        client.party?.me?.isReady && client.party.me.setReadiness(false);
         if (timerstatus) {
           clearTimeout(this.ID);
           timerstatus = false;
