@@ -1,5 +1,5 @@
-<h1><u>This is an experimental version of the bot called 1.2, has a bit of changes from 1.0 (main branch). Use at your own risk!</u></h1>
-<br>
+# Experimental
+This branch contains some fixes to the code, including some code to stabilize the bot from crashing. The bot may throw out some errors and take time to join the lobby, but it does after 15-30seconds. If it doesn't, or the bot crashes entirely, restart the program and it should work. <u>**This is an experimental branch with no official support, and any official and supported releases are on the main branch. Please download them [here](https://github.com/kitstudios/Fortnite-Bot-Royale/). Thank you**</u>
 
 # Fortnite Bot Royale
 
