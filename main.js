@@ -176,7 +176,7 @@ async function sleep(seconds) {
     console.log(`Index: ${index} has been registered`);
 
     const client = new FNclient({
-      defaultStatus: "NexBL Client Launching...",
+      defaultStatus: "FNBR Client Launching...",
       auth: { email, password },
       xmppDebug: false,
       platform: 'WIN',
@@ -197,7 +197,7 @@ async function sleep(seconds) {
     await client.login();
     const FNusername = client.auth.sessions.get("fortnite").displayName
     console.log(`[LOGS] Logged in as ${FNusername}`.green);
-    sendWebhookEmbed(`NexBL Client online!`, `NexBL Client: ${FNusername} is now online!`, 0x18FF00);
+    sendWebhookEmbed(`FNBR Client online!`, `FNBR Client: ${FNusername} is now online!`, 0x18FF00);
     client.setStatus(bot_invite_status, bot_invite_onlinetype);
 
     try {
@@ -218,8 +218,8 @@ async function sleep(seconds) {
           console.log(error.response.data.errorCode);
           removeAccountInfo(client.user.self.id);
           sendWebhookEmbed(
-            "A NexBL Client has been banned!",
-            `<:error:1281858196260130826> NexBL Client: ${FNusername} has been banned from matchmaking.\nThis client will not be online after the next restart.`,
+            "A FNBR Client has been banned!",
+            `<:error:1281858196260130826> FNBR Client: ${FNusername} has been banned from matchmaking.\nThis client will not be online after the next restart.`,
             0xED4245
           );
         }
@@ -365,8 +365,8 @@ async function sleep(seconds) {
           const PartyMatchmakingInfo = JSON.parse(updated.meta.schema["Default:PartyMatchmakingInfo_j"]).PartyMatchmakingInfo;
 
           sendWebhookEmbed(
-            `New match with NexBL (client: ${FNusername})!`,
-            `**Party members:**\n${partyPlayerNames}\n\n-# NexBL has now loaded into ${createdMatches} total matches.`,
+            `New match with FNBR (client: ${FNusername})!`,
+            `**Party members:**\n${partyPlayerNames}\n\n-# FNBR has now loaded into ${createdMatches} total matches.`,
             0x00E3FF
           );
 
