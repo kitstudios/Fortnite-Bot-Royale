@@ -2,7 +2,7 @@
 // Based on NexBL V1 by AjaxFNC, I fixed it, but like very shitty
 // Shoutout FNBL.xyz, go check 'em out, don't use this
 // unless you are VERY desperate for Fortnite Bot Lobbies
-
+// Version 1.2
 const nconf = require('nconf');
 const config = nconf.argv().env().file({ file: 'config.json' });
 const { Client: FNclient, Enums } = require('fnbr');
@@ -21,7 +21,8 @@ require('colors');
 
 const bLog = true;
 const GetVersion = require('./utils/version');
-const webhookUrl = 'https://discord.com/api/webhooks/1352989082992775238/hQV4G2Ut4dCR8Ox0KlqvG-HD3thqKTy3FBav9NuZ22FqDahKHQVGA_JjKwrKihwmiKlt'; // Add your webhook URL here if needed
+//get discord spam here
+const webhookUrl = '';
 
 // Config variables
 const emoteName = nconf.get('fortnite:emote');
@@ -144,6 +145,8 @@ async function sleep(seconds) {
 
 // Main execution
 (async () => {
+  console.log(`[LOGS] Starting up bot...`.blue)
+  console.log(`[LOGS] Loading cosmetics...`.blue)
   let skinObj = await fetchCosmetic(skinName, "outfit");
   let backpackObj = await fetchCosmetic(backpackName, "backpack");
   let emoteObj = await fetchCosmetic(emoteName, "emote");
@@ -152,18 +155,20 @@ async function sleep(seconds) {
   let backpackBid = backpackObj ? backpackObj.id : undefined;
   let emoteEid = emoteObj ? emoteObj.id : undefined;
 
-  console.log(`Skin: ${skinCid}\nBackpack: ${backpackBid}\nEmote: ${emoteEid}`);
+  console.log(`[LOGS] Skin: ${skinCid}\n[LOGS] Backpack: ${backpackBid}\n[LOGS] Emote: ${emoteEid}`);
 
   const lastest = await GetVersion();
   const Platform = os.platform() === "win32" ? "Windows" : os.platform();
   const UserAgent = `Fortnite/${lastest.replace('-Windows', '')} ${Platform}/${os.release()}`;
   axios.defaults.headers["user-agent"] = UserAgent;
-  console.log("UserAgent set to".yellow, axios.defaults.headers["user-agent"].yellow);
+  console.log("[LOGS] UserAgent set to".yellow, axios.defaults.headers["user-agent"].yellow);
+
 
   let accountsobject = [];
   let index = 1;
 
-  while (index <= 26) {
+  while (index <= 1) {
+    //This login method is worse than the old one and very much less secure lol, but the old one is a pain in the ass to set up
     const email = process.env[`email${index === 1 ? '' : index}`];
     const password = process.env[`password${index === 1 ? '' : index}`];
 
@@ -172,12 +177,12 @@ async function sleep(seconds) {
       index++;
       continue;
     }
-
-    console.log(`Index: ${index} has been registered`);
+    const loginAuth = { email, password };
+    console.log(`[LOGS] Bot has been registered`.green);
 
     const client = new FNclient({
-      defaultStatus: "NexBL Client Launching...",
-      auth: { email, password },
+      defaultStatus: "Fortnite",
+      auth: { loginAuth },
       xmppDebug: false,
       platform: 'WIN',
       partyConfig: {
@@ -195,13 +200,13 @@ async function sleep(seconds) {
     let timerstatus = false;
 
     await client.login();
+    //This is shit, no really
     const FNusername = client.auth.sessions.get("fortnite").displayName
     console.log(`[LOGS] Logged in as ${FNusername}`.green);
-    sendWebhookEmbed(`NexBL Client online!`, `NexBL Client: ${FNusername} is now online!`, 0x18FF00);
     client.setStatus(bot_invite_status, bot_invite_onlinetype);
 
     try {
-      await client.party.setPrivacy(Enums.PartyPrivacy.PUBLIC);
+      await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE);
     } catch (e) {
       console.log(`[PARTY] Failed to set privacy.`.red);
     }
@@ -217,11 +222,7 @@ async function sleep(seconds) {
         if (error.response.data.errorCode === "errors.com.epicgames.fortnite.player_banned_from_sub_game") {
           console.log(error.response.data.errorCode);
           removeAccountInfo(client.user.self.id);
-          sendWebhookEmbed(
-            "A NexBL Client has been banned!",
-            `<:error:1281858196260130826> NexBL Client: ${FNusername} has been banned from matchmaking.\nThis client will not be online after the next restart.`,
-            0xED4245
-          );
+
         }
         client.party.sendMessage(`HTTP Error: ${error.response.status} ${error.response.data.errorCode} ${error.response.data.errorMessage}`);
         console.error(error.response.status, error.response.data);
@@ -287,7 +288,6 @@ async function sleep(seconds) {
             client.party.me.setReadiness(false);
             return;
           }
-
           const TicketRequest = await axios.get(
             `https://fngw-mcp-gc-livefn.ol.epicgames.com/fortnite/api/game/v2/matchmakingservice/ticket/player/${client.user.self.id}?${query}`,
             {
@@ -364,11 +364,7 @@ async function sleep(seconds) {
           var partyPlayerNames = client.party.members.map(x => `- ${x.displayName}`).join('\n');
           const PartyMatchmakingInfo = JSON.parse(updated.meta.schema["Default:PartyMatchmakingInfo_j"]).PartyMatchmakingInfo;
 
-          sendWebhookEmbed(
-            `New match with NexBL (client: ${FNusername})!`,
-            `**Party members:**\n${partyPlayerNames}\n\n-# NexBL has now loaded into ${createdMatches} total matches.`,
-            0x00E3FF
-          );
+
 
           if (client.party?.me?.isReady) client.party.me.setReadiness(false);
           bIsMatchmaking = false;
@@ -410,7 +406,8 @@ async function sleep(seconds) {
       } else if ((!Member.isReady && Member.isLeader) && !client.party.bManualReady) {
         try {
           if (client?.WSS?.close) client.WSS.close();
-         else console.log(`[ERROR] WebSocket connection is not available or already closed.`);
+          //do not add a console.log here or it's the end of times!
+         else void(0)
         } catch (e) {
           console.log(`[ERROR] ${e}`);
         }
@@ -423,7 +420,6 @@ async function sleep(seconds) {
       try {
         if (addusers === true) {
           await request.accept();
-          sendWebhookEmbed("New Friend Request!", `Accepted friend request from: ${request.displayName}`, 0x00E3FF);
         } else {
           await request.decline();
           console.log(`[PARTY] Declined friend request from: ${request.displayName}. Reason: Friend requests are disabled.`);
@@ -438,7 +434,6 @@ async function sleep(seconds) {
       try {
         if (client.party.size === 1 && join_users === true) {
           await request.accept();
-          sendWebhookEmbed("New Party Invite!", `Accepted invite from: ${request.sender.displayName}`, 0x00E3FF);
         } else {
           await request.decline();
         }
@@ -510,7 +505,6 @@ async function sleep(seconds) {
       };
 
       if (client.party.size !== 1) {
-        console.log(client.party)
         console.log("[PARTY] Time has started!".green);
         this.ID = setTimeout(async () => {
           client.party.chat.send("Time expired!");
