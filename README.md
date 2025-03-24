@@ -7,6 +7,7 @@ This is not meant for use on any production server, and it will most likely neve
 <br>
 # To use
 * Run `npm install` in the extracted directory
+* Rename the `env` file to `.env`
 * run `node main.js` once everything is set up, and sign in using the "Authorization code" method down below.
 * From then, on Fortnite, select BR/Zero Build BR or Reload, make sure to have no fill on, and get ready
 * Let it matchmake and you should be in a bot lobby!
