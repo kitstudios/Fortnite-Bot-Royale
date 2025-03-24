@@ -1,6 +1,3 @@
-# Experimental
-This branch contains some fixes to the code, including some code to stabilize the bot from crashing. The bot may throw out some errors and take time to join the lobby, but it does after 15-30seconds. If it doesn't, or the bot crashes entirely, restart the program and it should work. <br><u>**This is an experimental branch with no official support, and any official and supported releases are on the main branch. Please download them [here](https://github.com/kitstudios/Fortnite-Bot-Royale/). Thank you**</u>.
-
 # Fortnite Bot Royale
 
 This is based on AjaxFNC's [NexBL V1](https://github.com/AjaxFNC-YT/NexBL-V1/), which was pretty broken lol
