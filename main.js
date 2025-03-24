@@ -142,6 +142,14 @@ async function sendWebhookEmbed(title, description, colorHex) {
 async function sleep(seconds) {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
+async function disconnectBot(client) {
+  try {
+    await client.logout();
+    console.log(`[DISCONNECT] Bot ${client.auth.sessions.get("fortnite").displayName} has been disconnected`.green);
+  } catch (error) {
+    console.error(`[DISCONNECT ERROR] Failed to disconnect bot: ${error.message}`.red);
+  }
+}
 
 // Main execution
 (async () => {
@@ -167,20 +175,12 @@ async function sleep(seconds) {
   let index = 1;
 
   while (index <= 1) {
-    const email = process.env[`email${index === 1 ? '' : index}`];
-    const password = process.env[`password${index === 1 ? '' : index}`];
 
-    if (!email || !password || email === 'none' || password === 'none' || email === '' || password === '') {
-      console.log(`Skipping index ${index}: Invalid or missing credentials.`);
-      index++;
-      continue;
-    }
-    const loginAuth = { email, password };
-    console.log(`[LOGS] Bot has been registered`.green);
+    console.log(`[LOGIN] Connection to Epic servers is successful!`.green);
+    console.log(`[LOGIN] Open this website, copy the "authorizationCode", and paste it here.\n[LOGIN] The website: https://www.epicgames.com/id/api/redirect?clientId=3f69e56c7649492c8cc29f1af08a8a12&responseType=code`.red)
 
     const client = new FNclient({
       defaultStatus: "Fortnite",
-      auth: { loginAuth },
       xmppDebug: false,
       platform: 'WIN',
       partyConfig: {
@@ -198,8 +198,9 @@ async function sleep(seconds) {
     let timerstatus = false;
 
     await client.login();
+    console.log(client.auth.sessions.get("fortnite"))
     const FNusername = client.auth.sessions.get("fortnite").displayName;
-    console.log(`[LOGS] Logged in as ${FNusername}`.green);
+    console.log(`[LOGIN] Logged in as ${FNusername}`.green);
     client.setStatus(bot_invite_status, bot_invite_onlinetype);
 
     // Party initialization (modified)
@@ -591,5 +592,19 @@ async function sleep(seconds) {
         }
       }
     });
+    // Process termination handlers
+  process.on('SIGINT', async () => {
+    console.log('[SHUTDOWN] Received SIGINT, disconnecting bot...'.yellow);
+    client.logout();
+    sleep(6);
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    console.log('[SHUTDOWN] Received SIGTERM, disconnecting bot...'.yellow);
+    client.logout();
+    sleep(6);
+    process.exit(0);
+  });
   }));
 })();
