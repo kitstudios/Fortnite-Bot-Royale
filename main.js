@@ -198,7 +198,6 @@ async function disconnectBot(client) {
     let timerstatus = false;
 
     await client.login();
-    console.log(client.auth.sessions.get("fortnite"))
     const FNusername = client.auth.sessions.get("fortnite").displayName;
     console.log(`[LOGIN] Logged in as ${FNusername}`.green);
     client.setStatus(bot_invite_status, bot_invite_onlinetype);
