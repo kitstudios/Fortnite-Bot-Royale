@@ -1,7 +1,5 @@
 // Fortnite Bot Royale - March 2025
-// Based on NexBL V1 by AjaxFNC, I fixed it, but like very shitty
-// Shoutout FNBL.xyz, go check 'em out, don't use this
-// unless you are VERY desperate for Fortnite Bot Lobbies
+// Based on NexBL V1 by AjaxFNC
 // Version 1.2
 const nconf = require('nconf');
 const config = nconf.argv().env().file({ file: 'config.json' });
