@@ -1,6 +1,6 @@
 // Fortnite Bot Royale - March 2025
 // Based on NexBL V1 by AjaxFNC
-var currentVer = 1.4
+var currentVer = "[Experimental] 1.4"
 const nconf = require('nconf');
 const config = nconf.argv().env().file({ file: 'config.json' });
 const { Client: FNclient, Enums } = require('fnbr');
