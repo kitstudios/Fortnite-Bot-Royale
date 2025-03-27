@@ -194,7 +194,10 @@ async function refreshAuthToken(client, refreshToken) {
   while (index <= 1) {
 
     if (process.env[`refreshToken`] === undefined) {
-    console.log(`\n***** FIRST TIME SETUP *****\n[LOGIN] Open this website, copy the "authorizationCode", and paste it here.\n[LOGIN] The website: https://www.epicgames.com/id/api/redirect?clientId=3f69e56c7649492c8cc29f1af08a8a12&responseType=code`.red)
+    console.log(`\n***** FIRST TIME SETUP *****\n[WARNING] Make sure to be signed into the Epic Games account that will serve as the bot account!! Use incognito mode, or another browser to make sure!\n[LOGIN] Open this website, copy the "authorizationCode", and paste it here.\n[LOGIN] The website: https://www.epicgames.com/id/api/redirect?clientId=3f69e56c7649492c8cc29f1af08a8a12&responseType=code`.red)
+  } else {
+    console.log(`[LOGIN] Login data detected`.blue)
+
   }
 
     const client = new FNclient({
@@ -247,7 +250,7 @@ async function refreshAuthToken(client, refreshToken) {
 
         const updatedEnv = Object.entries(envConfig).map(([key, value]) => `${key}=${value}`).join('\n');
         fs.writeFileSync(envPath, updatedEnv, 'utf8');
-        console.log(`[ENV] Stored auth data for ${FNusername}`.green);
+        console.log(`[ENV] Stored new authentification data for ${FNusername}`.green);
         console.log(`[LOGIN] Logged in as ${FNusername}`.green);
       }
     } catch (error) {
@@ -462,7 +465,7 @@ async function refreshAuthToken(client, refreshToken) {
           const PartyMatchmakingInfo = JSON.parse(updated.meta.schema["Default:PartyMatchmakingInfo_j"]).PartyMatchmakingInfo;
 
           if (client.party?.me?.isReady) {
-            client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR1] Set readiness failed: ${err.message}`.red));
+            client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
           }
           bIsMatchmaking = false;
 
@@ -550,7 +553,7 @@ client.on("party:member:updated", async (Member) => {
       }
       await client.party.me.setReadiness(true);
     } catch (err) {
-      console.error(`[PARTY ERROR6] Set readiness failed: ${err.message}`.red);
+      console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red);
     }
   } else if ((!Member.isReady && Member.isLeader) && !client.party.bManualReady) {
     try {
@@ -567,7 +570,7 @@ client.on("party:member:updated", async (Member) => {
       await sleep(2)
       await client.party.me.setReadiness(false);
     } catch (err) {
-      console.error(`[PARTY ERROR7] Set readiness failed: ${err.message}`.red);
+      console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red);
       if (err.message.includes("Set readiness failed: Party")) {
         try {
           // Reinitialize party state
@@ -682,7 +685,7 @@ client.on("party:member:updated", async (Member) => {
           client.setStatus(bot_invite_status, bot_invite_onlinetype);
           await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE).catch(err => console.log(`[PARTY] Privacy reset failed: ${err.message}`.red));
           if (client.party?.me?.isReady) {
-            client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR4] Set readiness failed: ${err.message}`.red));
+            client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
           }
           if (timerstatus) {
             clearTimeout(this.ID);
@@ -735,7 +738,7 @@ client.on("party:member:updated", async (Member) => {
           console.log(`[PARTY] Failed to set privacy`.red);
         }
         if (client.party?.me?.isReady) {
-          client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR5] Set readiness failed: ${err.message}`.red));
+          client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
 
         }
         if (timerstatus) {
