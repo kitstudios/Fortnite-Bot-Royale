@@ -1,8 +1,6 @@
 // Fortnite Bot Royale - March 2025
-// Based on NexBL V1 by AjaxFNC, I fixed it, but like very shitty
-// Shoutout FNBL.xyz, go check 'em out, don't use this
-// unless you are VERY desperate for Fortnite Bot Lobbies
-// Version 1.2
+// Based on NexBL V1 by AjaxFNC
+var currentVer = 1.4
 const nconf = require('nconf');
 const config = nconf.argv().env().file({ file: 'config.json' });
 const { Client: FNclient, Enums } = require('fnbr');
@@ -61,30 +59,31 @@ const getCosmeticPath = (path) => {
     .join('/');
 };
 
-function removeAccountInfo(accountId) {
+function removeAccountInfo(refreshToken) {
   const envPath = path.resolve(__dirname, '.env');
   const envContent = fs.readFileSync(envPath, 'utf8');
   const envConfig = dotenv.parse(envContent);
 
   let keyPrefix = null;
   for (let key in envConfig) {
-    if (envConfig[key] === accountId && (key.startsWith('accountId') || key === 'accountId')) {
+    if (envConfig[key] === refreshToken && (key.startsWith('refreshToken') || key === 'refreshToken')) {
       keyPrefix = key.match(/\d*$/)[0] || '';
       break;
     }
   }
 
   if (keyPrefix !== null) {
-    delete envConfig[`accountId${keyPrefix}`];
-    delete envConfig[`deviceId${keyPrefix}`];
-    delete envConfig[`secret${keyPrefix}`];
+   // delete envConfig[`accountId${keyPrefix}`];
+   // delete envConfig[`deviceId${keyPrefix}`];
+   // delete envConfig[`secret${keyPrefix}`];
+    delete envConfig[`refreshToken`]; // Added to remove refresh token
     const updatedEnv = Object.entries(envConfig).map(([key, value]) => `${key}=${value}`).join('\n');
     fs.writeFileSync(envPath, updatedEnv, 'utf8');
-    console.log(`Removed account info for accountId: ${accountId}`);
-    console.log('\nUpdated .env content:');
+    //console.log(`[ENV] Removed old account info for accountId: ${accountId}`.yellow);
+    //console.log(`[ENV] Updated .env content:\n${updatedEnv}`.blue);
     console.log(updatedEnv);
   } else {
-    console.log(`AccountId ${accountId} not found.`);
+    //console.log(`AccountId ${accountId} not found.`);
   }
 }
 
@@ -142,18 +141,36 @@ async function sendWebhookEmbed(title, description, colorHex) {
 async function sleep(seconds) {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
-async function disconnectBot(client) {
+
+// Config variables (do not touch this)
+const clientId = '3f69e56c7649492c8cc29f1af08a8a12';
+const clientSecret = 'b51ee9cb12234f50a69efa67ef53812e';
+
+// Utility function to refresh token
+async function refreshAuthToken(client, refreshToken) {
   try {
-    await client.logout();
-    console.log(`[DISCONNECT] Bot ${client.auth.sessions.get("fortnite").displayName} has been disconnected`.green);
+    const response = await axios.post(
+      'https://account-public-service-prod.ol.epicgames.com/account/api/oauth/token',
+      `grant_type=refresh_token&refresh_token=${refreshToken}`,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+        },
+      }
+    );
+    const { access_token, refresh_token, expires_in } = response.data;
+    console.log(`[AUTH] Refreshed token for ${client.auth.sessions.get("fortnite").displayName}`.green);
+    return { accessToken: access_token, refreshToken: refresh_token, expiresIn: expires_in };
   } catch (error) {
-    console.error(`[DISCONNECT ERROR] Failed to disconnect bot: ${error.message}`.red);
+    console.error(`[AUTH ERROR] Failed to refresh token: ${error.response?.data?.error || error.message}`.red);
+    throw error;
   }
 }
 
 // Main execution
 (async () => {
-  console.log(`[LOGS] Starting up bot...`.blue)
+  console.log(`[LOGS] Starting up Fortnite Bot Royale version ${currentVer}...`.blue)
   console.log(`[LOGS] Loading cosmetics...`.blue)
   let skinObj = await fetchCosmetic(skinName, "outfit");
   let backpackObj = await fetchCosmetic(backpackName, "backpack");
@@ -176,34 +193,102 @@ async function disconnectBot(client) {
 
   while (index <= 1) {
 
-    console.log(`[LOGIN] Connection to Epic servers is successful!`.green);
-    console.log(`[LOGIN] Open this website, copy the "authorizationCode", and paste it here.\n[LOGIN] The website: https://www.epicgames.com/id/api/redirect?clientId=3f69e56c7649492c8cc29f1af08a8a12&responseType=code`.red)
+    if (process.env[`refreshToken`] === undefined) {
+    console.log(`\n***** FIRST TIME SETUP *****\n[LOGIN] Open this website, copy the "authorizationCode", and paste it here.\n[LOGIN] The website: https://www.epicgames.com/id/api/redirect?clientId=3f69e56c7649492c8cc29f1af08a8a12&responseType=code`.red)
+  }
 
     const client = new FNclient({
       defaultStatus: "Fortnite",
       xmppDebug: false,
-      platform: 'WIN',
+      platform: 'AND',
       partyConfig: {
         chatEnabled: true,
         maxSize: 6
-      }
-    });
+      },
+      auth: {
+        refreshToken: process.env[`refreshToken`],
+    }
+  });
 
     accountsobject.push(client);
     index++;
   }
 
-  await Promise.all(accountsobject.map(async (client) => {
+  await Promise.all(accountsobject.map(async (client, idx) => {
     let bIsMatchmaking = false;
     let timerstatus = false;
 
-    await client.login();
-    console.log(client.auth.sessions.get("fortnite"))
-    const FNusername = client.auth.sessions.get("fortnite").displayName;
-    console.log(`[LOGIN] Logged in as ${FNusername}`.green);
+    // Login and handle refresh token
+    try {
+      // Before logging in, remove any old data for previous login
+      if (client.auth.sessions.get("fortnite")?.refreshToken) {
+        removeAccountInfo(client.auth.sessions.get("fortnite").refreshToken);
+      }
+
+      await client.login();
+      const FNusername = client.auth.sessions.get("fortnite").displayName;
+
+    //  const accountId = client.auth.sessions.get("fortnite").accountId;
+      const refreshToken = client.auth.sessions.get("fortnite").refreshToken;
+     // const deviceId = client.auth.sessions.get("fortnite").deviceId || crypto.randomUUID(); // Generate if not provided
+     // const secret = client.auth.sessions.get("fortnite").secret || crypto.randomBytes(16).toString('hex'); // Generate if not provided
+
+      if (refreshToken) {
+        removeAccountInfo(refreshToken); // Ensure old data is gone
+        const envPath = path.resolve(__dirname, '.env');
+        let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
+        const envConfig = dotenv.parse(envContent);
+
+      
+       // envConfig[`accountId`] = accountId;
+       // envConfig[`deviceId`] = deviceId;
+       // envConfig[`secret`] = secret;
+        envConfig[`refreshToken`] = refreshToken;
+
+        const updatedEnv = Object.entries(envConfig).map(([key, value]) => `${key}=${value}`).join('\n');
+        fs.writeFileSync(envPath, updatedEnv, 'utf8');
+        console.log(`[ENV] Stored auth data for ${FNusername}`.green);
+        console.log(`[LOGIN] Logged in as ${FNusername}`.green);
+      }
+    } catch (error) {
+      console.error(`[LOGIN ERROR] Initial login failed: ${error.message}`.red);
+      return;
+    }
+
     client.setStatus(bot_invite_status, bot_invite_onlinetype);
 
-    // Party initialization (modified)
+    client.on('auth:expired', async () => {
+      console.log(`[AUTH] Access token expired for ${client.auth.sessions.get("fortnite").displayName}`.yellow);
+      try {
+        const refreshToken = client.auth.sessions.get("fortnite").refreshToken;
+        const { accessToken, refreshToken: newRefreshToken } = await refreshAuthToken(client, refreshToken);
+
+        // Update client session
+        client.auth.sessions.get("fortnite").accessToken = accessToken;
+        client.auth.sessions.get("fortnite").refreshToken = newRefreshToken;
+
+        // Update .env with new refresh token
+        //const accountId = client.auth.sessions.get("fortnite").accountId;
+        //removeAccountInfo(accountId); // Remove old data
+        const envPath = path.resolve(__dirname, '.env');
+        let envContent = fs.readFileSync(envPath, 'utf8');
+        const envConfig = dotenv.parse(envContent);
+
+       // envConfig[`accountId${botIndex}`] = accountId;
+       // envConfig[`deviceId${botIndex}`] = client.auth.sessions.get("fortnite").deviceId;
+       // envConfig[`secret${botIndex}`] = client.auth.sessions.get("fortnite").secret;
+        envConfig[`refreshToken`] = newRefreshToken;
+
+        const updatedEnv = Object.entries(envConfig).map(([key, value]) => `${key}=${value}`).join('\n');
+        fs.writeFileSync(envPath, updatedEnv, 'utf8');
+        console.log(`[AUTH] Session refreshed and .env updated for ${client.auth.sessions.get("fortnite").displayName}`.green);
+      } catch (error) {
+        console.error(`[AUTH ERROR] Failed to refresh session: ${error.message}`.red);
+        await disconnectBot(client);
+      }
+    });
+
+    // Party initialization
     try {
       await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE);
       console.log(`[PARTY] Privacy set to PRIVATE`.green);
@@ -221,7 +306,6 @@ async function disconnectBot(client) {
       if (error.response && error.response.data.errorCode) {
         if (error.response.data.errorCode === "errors.com.epicgames.fortnite.player_banned_from_sub_game") {
           console.log(error.response.data.errorCode);
-          removeAccountInfo(client.user.self.id);
         }
         // Modified to check if party exists before sending
         if (client.party) {
@@ -232,7 +316,7 @@ async function disconnectBot(client) {
       return error;
     });
 
-    // Party updated event (modified)
+    // Party updated event
     client.on('party:updated', async (updated) => {
       if (!client.party) {
         console.log(`[PARTY ERROR] Party update received but no party exists`.red);
@@ -378,7 +462,7 @@ async function disconnectBot(client) {
           const PartyMatchmakingInfo = JSON.parse(updated.meta.schema["Default:PartyMatchmakingInfo_j"]).PartyMatchmakingInfo;
 
           if (client.party?.me?.isReady) {
-            client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
+            client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR1] Set readiness failed: ${err.message}`.red));
           }
           bIsMatchmaking = false;
 
@@ -411,30 +495,97 @@ async function disconnectBot(client) {
       }
     });
 
-    // Party member updated event (modified)
-    client.on("party:member:updated", async (Member) => {
-      if (Member.id === client.user.id || !client.party?.me) return;
+// Track party ID globally
+let currentPartyId = null;
 
-      if ((Member.isReady && (client.party?.me?.isLeader || Member.isLeader) && !client.party?.me?.isReady) && !client.party.bManualReady) {
-        if (!client.party) {
-          console.log(`[PARTY ERROR] Cannot update readiness: No party exists`.red);
-          return;
-        }
-        if (client.party.me.isLeader) await Member.promote();
-        await client.party.me.setReadiness(true).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
-      } else if ((!Member.isReady && Member.isLeader) && !client.party.bManualReady) {
+// Sync party ID on invite acceptance
+client.on('party:invite', async (request) => {
+  try {
+    if (client.party && client.party.size === 1 && join_users === true) {
+      await sleep(2); 
+      await request.accept();
+      console.log(`[PARTY] Accepted invite from ${request.sender.displayName}`.green);
+      
+      currentPartyId = client.party.id;
+      
+      await sleep(1); 
+      if (client.party) {
+        client.party.chat.send("Joined your party!");
+      }
+    } else {
+      await sleep(2);
+      await request.decline();
+      console.log(`[PARTY] Declined invite from ${request.sender.displayName} (party size: ${client.party?.size || 'none'})`.yellow);
+    }
+  } catch (e) {
+    console.log(`[WARNING] If the bot has joined your lobby, ignore this!\n[PARTY ERROR] Invite handling failed: ${e.message}`.red);
+  }
+});
+
+// Sync party ID on party updates
+client.on('party:updated', (updated) => {
+  if (updated.id !== currentPartyId) {
+    currentPartyId = updated.id;
+    client.party = updated; // Ensure client.party reflects the latest state
+  }
+});
+
+// Party member updated handler without debug logs
+client.on("party:member:updated", async (Member) => {
+  if (Member.id === client.user.id || !client.party?.me) return;
+
+  // Ensure party ID is current
+  if (currentPartyId && currentPartyId !== client.party?.id) {
+    client.party.id = currentPartyId; // Manual update (risky, see notes)
+  }
+
+  if ((Member.isReady && (client.party?.me?.isLeader || Member.isLeader) && !client.party?.me?.isReady) && !client.party.bManualReady) {
+    if (!client.party) {
+      console.log(`[PARTY ERROR] Cannot update readiness: No party exists`.red);
+      return;
+    }
+    try {
+      if (client.party.me.isLeader) {
+        await Member.promote();
+      }
+      await client.party.me.setReadiness(true);
+    } catch (err) {
+      console.error(`[PARTY ERROR6] Set readiness failed: ${err.message}`.red);
+    }
+  } else if ((!Member.isReady && Member.isLeader) && !client.party.bManualReady) {
+    try {
+      // Close WebSocket if it exists
+      if (client?.WSS?.close) {
+        client.WSS.close();
+      }
+
+      // Double-check party existence
+      if (!client.party) {
+        console.log(`[PARTY ERROR] Party no longer exists before setting readiness false`.red);
+        return;
+      }
+      await sleep(2)
+      await client.party.me.setReadiness(false);
+    } catch (err) {
+      console.error(`[PARTY ERROR7] Set readiness failed: ${err.message}`.red);
+      if (err.message.includes("Set readiness failed: Party")) {
         try {
-          if (client?.WSS?.close) client.WSS.close();
-          else void(0);
-        } catch (e) {
-          console.log(`[ERROR] ${e}`);
-        }
-        if (client.party) {
-          await client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
+          // Reinitialize party state
+          await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE);
+          currentPartyId = client.party?.id;
+
+          // Retry setting readiness
+          await client.party.me.setReadiness(false);
+        } catch (recoveryErr) {
+          console.error(`[PARTY RECOVERY ERROR] Failed to recover: ${recoveryErr.message}`.red);
+          if (currentPartyId) {
+            await client.party.leave();
+          }
         }
       }
-    });
-
+    }
+  }
+});
     // Friend request event
     client.on('friend:request', async (request) => {
       try {
@@ -449,11 +600,12 @@ async function disconnectBot(client) {
       }
     });
 
-    // Party invite event (modified)
+    // Party invite event
     client.on('party:invite', async (request) => {
       try {
         if (client.party && client.party.size === 1 && join_users === true) {
-          await sleep(2); // Wait to ensure join completes
+          await sleep(1);
+          currentPartyId = null;
           await request.accept();
           console.log(`[PARTY] Accepted invite from ${request.sender.displayName}`.green);
           await sleep(1); // Additional delay to stabilize
@@ -466,7 +618,7 @@ async function disconnectBot(client) {
           console.log(`[PARTY] Declined invite from ${request.sender.displayName} (party size: ${client.party?.size || 'none'})`.yellow);
         }
       } catch (e) {
-        console.log(`[PARTY ERROR] Invite handling failed: ${e.message}`.red);
+        console.log(`[PARTY ERROR] Invite handling has failed: ${e.message}`.red);
       }
     });
 
@@ -503,7 +655,7 @@ async function disconnectBot(client) {
     client.on('party:member:message', handleCommand);
     client.on('friend:message', handleCommand);
 
-    // Party member joined event (modified)
+    // Party member joined event
     client.on('party:member:joined', async (join) => {
       if (!client.party) {
         console.log(`[PARTY ERROR] Member joined but no party exists`.red);
@@ -530,7 +682,7 @@ async function disconnectBot(client) {
           client.setStatus(bot_invite_status, bot_invite_onlinetype);
           await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE).catch(err => console.log(`[PARTY] Privacy reset failed: ${err.message}`.red));
           if (client.party?.me?.isReady) {
-            client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
+            client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR4] Set readiness failed: ${err.message}`.red));
           }
           if (timerstatus) {
             clearTimeout(this.ID);
@@ -562,7 +714,7 @@ async function disconnectBot(client) {
       await updateStatusAndChat();
     });
 
-    // Party member left event (modified)
+    // Party member left event
     client.on('party:member:left', async (left) => {
       if (!client.party) {
         console.log(`[PARTY ERROR] Member left but no party exists`.red);
@@ -583,7 +735,8 @@ async function disconnectBot(client) {
           console.log(`[PARTY] Failed to set privacy`.red);
         }
         if (client.party?.me?.isReady) {
-          client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR] Set readiness failed: ${err.message}`.red));
+          client.party.me.setReadiness(false).catch(err => console.error(`[PARTY ERROR5] Set readiness failed: ${err.message}`.red));
+
         }
         if (timerstatus) {
           clearTimeout(this.ID);
