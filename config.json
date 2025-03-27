@@ -10,10 +10,10 @@
     "leave_after_success": true,
     "leave_time": 300000,
     "join_message": "🔥 You have 5 minutes to ready up and get in a bot lobby!",
-    "invite_status": "Fortnite Bot Royale | Invite me!",
+    "invite_status": "Fortnite Bot Royale | Invite me! | discord.gg/ZUgh7qSs2k",
     "invite_onlinetype": "online",
-    "inuse_status": "Fortnite Bot Royale | Busy at the moment",
-    "inuse_onlinetype": "xa",
+    "inuse_status": "Fortnite Bot Royale | Busy at the moment | discord.gg/ZUgh7qSs2k",
+    "inuse_onlinetype": "online",
     "whitelist": [
       "1"
     ]
