@@ -10,6 +10,7 @@ This is very broken too, expect instability.
 This is not meant for use on any production server, and it will most likely never get updated again after this month, enjoy.
 <br>
 # To use
+Install Node.js, available [here](https://nodejs.org/en/download), as it is necessary for this bot to function.
 * Run `npm install` in the extracted directory
 * rename `env` to `.env`
 * run `node main.js` once everything is set up, and follow the first time setup for your bot. (How to get authorization code is below)
