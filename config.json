@@ -1,8 +1,8 @@
 {
   "fortnite": {
-    "skin": "Renegade Raider",
+    "skin": "Drift",
     "backpack": "",
-    "emote": "Windmill Floss",
+    "emote": "Billy Bounce",
     "level": "100",
     "banner": "BRS18_DarkTrio",
     "add_users": true,
@@ -24,8 +24,7 @@
     "bot_loading_message": "Bot is loading!",
     "web_message": "L use this for uptime",
     "reload": false,
-    "reload_time": 5400000,
-    "bot_version": "8.2"
+    "reload_time": 5400000
   }
 
 
