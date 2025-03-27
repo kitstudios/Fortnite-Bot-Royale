@@ -6,6 +6,8 @@ It's mostly stable and usable now, tho it may take between 30-45 seconds before 
 This is not meant for use on any production server, and it will most likely never get updated again after this month, enjoy.<br>
 <br>
 # How to use
+Install Node.js, available [here](https://nodejs.org/en/download), as it is necessary for this bot to function.
+
 * Run `npm install` in the extracted directory
 * Rename the `env` file to `.env`
 * run `node main.js` once everything is set up, and sign in using the "Authorization code" method down below.
