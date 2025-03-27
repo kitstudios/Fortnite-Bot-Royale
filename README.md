@@ -23,7 +23,10 @@ To get an authorization code, click on this click [right here](https://www.epicg
 <br>
 
 # Experimental
-The experimental branch of [this repo](https://github.com/kitstudios/Fortnite-Bot-Royale/tree/Experimental) is the current Experimental update for FNBR. It may or may never release.
+The experimental branch of [this repo](https://github.com/kitstudios/Fortnite-Bot-Royale/tree/Experimental) is the current Beta Experimental update for FNBR.
+<br>
+The **SUPER Experimental** branch of [this repo](https://github.com/kitstudios/Fortnite-Bot-Royale/tree/SuperExp) is the Canary Experimental update for FNBR. It may or may never release.
+
 
 
 
