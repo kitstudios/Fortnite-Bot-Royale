@@ -1,5 +1,5 @@
-# Experimental
-This branch contains some fixes to the code, including some code to stabilize the bot from crashing. The bot is now mostly stable, and doesn't crash as much anymore. 1.4 also introduces refreshToken support, which is refreshed at every bot startup, and auto logs you in. The 15-30 seconds delay should be mostly gone.<br><br><u>**This is an experimental branch with no official support, and any official and supported releases are on the main branch. Please download them [here](https://github.com/kitstudios/Fortnite-Bot-Royale/). Thank you**</u>.
+# Super Experimental
+This branch contains some fixes to the code, including some code to stabilize the bot from crashing. The bot is now mostly stable, and doesn't crash as much anymore. 1.6 discontinues refreshToken support for a more stable long-term approach using the deviceAuth method, which still auto logs you in. The 15-30 seconds delay should be mostly gone.<br><br><u>**This is an experimental branch with no official support, and any official and supported releases are on the main branch. Please download them [here](https://github.com/kitstudios/Fortnite-Bot-Royale/). Thank you**</u>.
 
 # Fortnite Bot Royale
 
