@@ -1,6 +1,6 @@
 // Fortnite Bot Royale - March 2025
 // Based on NexBL V1 by AjaxFNC
-var currentVer = "[SUPER Experimental] 1.6 (Rev 1.0)"
+var currentVer = "[SUPER EXPERIMENTAL] 1.6 (Rev 1.1)"
 const nconf = require('nconf');
 const config = nconf.argv().env().file({ file: 'config.json' });
 const { Client: FNclient, Enums, Client } = require('fnbr');
@@ -14,6 +14,7 @@ const os = require('os');
 const Websocket = require('ws');
 const { allowedPlaylists, websocketHeaders } = require('./utils/constants');
 const xmlparser = require('xml-parser');
+var userInvite;
 
 require('colors');
 
@@ -398,29 +399,6 @@ async function sleep(seconds) {
 // Track party ID globally
 let currentPartyId = null;
 
-// Sync party ID on invite acceptance
-client.on('party:invite', async (request) => {
-  try {
-    if (client.party && client.party.size === 1 && join_users === true) {
-      await sleep(2); 
-      await request.accept();
-      console.log(`[PARTY] Accepted invite from ${request.sender.displayName}`.green);
-      
-      currentPartyId = client.party.id;
-      
-      await sleep(1); 
-      if (client.party) {
-        client.party.chat.send("Joined your party!");
-      }
-    } else {
-      await sleep(2);
-      await request.decline();
-      console.log(`[PARTY] Declined invite from ${request.sender.displayName} (party size: ${client.party?.size || 'none'})`.yellow);
-    }
-  } catch (e) {
-    console.log(`[WARNING] If the bot has joined your lobby, ignore this!\n[PARTY ERROR] Invite handling failed: ${e.message}`.red);
-  }
-});
 
 // Sync party ID on party updates
 client.on('party:updated', (updated) => {
@@ -507,6 +485,7 @@ client.on("party:member:updated", async (Member) => {
           await sleep(1);
           currentPartyId = null;
           await request.accept();
+          userInvite = request.sender.displayName;
           console.log(`[PARTY] Accepted invite from ${request.sender.displayName}`.green);
           await sleep(1); // Additional delay to stabilize
           if (client.party) {
@@ -605,11 +584,13 @@ client.on("party:member:updated", async (Member) => {
           timerstatus = false;
         }, bot_leave_time);
         timerstatus = true;
-        console.log(`Joined ${join.displayName}`.blue);
-        join.party.members.forEach(member => console.log(member.displayName));
+        await sleep(3);
+        console.log(`[PARTY] Joined ${userInvite}`.green);
+         console.log(`[PARTY] Members currently in the party:`.blue)
+        join.party.members.forEach(member => console.log(`${member.displayName}`.blue));
       }
-
-      setTimeout(function(){client.party.me.setEmote(emoteEid, getCosmeticPath(emoteObj.path))},2000);
+      await sleep(1.2);
+      client.party.me.setEmote(emoteEid, getCosmeticPath(emoteObj.path));
       await client.party.me.setOutfit(skinCid, undefined, undefined);
       await updateStatusAndChat();
     });
@@ -618,6 +599,7 @@ client.on("party:member:updated", async (Member) => {
     client.on('party:member:left', async (left) => {
       if (!client.party) {
         console.log(`[PARTY ERROR] Member left but no party exists`.red);
+        userInvite === undefined
         return;
       }
 
@@ -629,6 +611,7 @@ client.on("party:member:updated", async (Member) => {
       }
       if (partySize === 1) {
         client.setStatus(bot_invite_status, bot_invite_onlinetype);
+        userInvite === undefined
         try {
           await client.party.setPrivacy(Enums.PartyPrivacy.PRIVATE);
         } catch {
