@@ -1,13 +1,13 @@
 // Fortnite Bot Royale - March 2025
 // Based on NexBL V1 by AjaxFNC
-var currentVer = 1.4
+var currentVer = "[SUPER EXPERIMENTAL] 1.6 (Rev 1.0)"
 const nconf = require('nconf');
 const config = nconf.argv().env().file({ file: 'config.json' });
-const { Client: FNclient, Enums } = require('fnbr');
+const { Client: FNclient, Enums, Client } = require('fnbr');
 const crypto = require('crypto');
 const dotenv = require('dotenv');
 dotenv.config();
-const fs = require('fs');
+const { promises: fs } = require('fs');
 const axios = require('axios').default;
 const path = require('path');
 const os = require('os');
@@ -59,33 +59,7 @@ const getCosmeticPath = (path) => {
     .join('/');
 };
 
-function removeAccountInfo(refreshToken) {
-  const envPath = path.resolve(__dirname, '.env');
-  const envContent = fs.readFileSync(envPath, 'utf8');
-  const envConfig = dotenv.parse(envContent);
 
-  let keyPrefix = null;
-  for (let key in envConfig) {
-    if (envConfig[key] === refreshToken && (key.startsWith('refreshToken') || key === 'refreshToken')) {
-      keyPrefix = key.match(/\d*$/)[0] || '';
-      break;
-    }
-  }
-
-  if (keyPrefix !== null) {
-   // delete envConfig[`accountId${keyPrefix}`];
-   // delete envConfig[`deviceId${keyPrefix}`];
-   // delete envConfig[`secret${keyPrefix}`];
-    delete envConfig[`refreshToken`]; // Added to remove refresh token
-    const updatedEnv = Object.entries(envConfig).map(([key, value]) => `${key}=${value}`).join('\n');
-    fs.writeFileSync(envPath, updatedEnv, 'utf8');
-    //console.log(`[ENV] Removed old account info for accountId: ${accountId}`.yellow);
-    //console.log(`[ENV] Updated .env content:\n${updatedEnv}`.blue);
-    console.log(updatedEnv);
-  } else {
-    //console.log(`AccountId ${accountId} not found.`);
-  }
-}
 
 function calcChecksum(payload, signature) {
   let token = process.env.checksumtoken;
@@ -142,32 +116,6 @@ async function sleep(seconds) {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
 
-// Config variables (do not touch this)
-const clientId = '3f69e56c7649492c8cc29f1af08a8a12';
-const clientSecret = 'b51ee9cb12234f50a69efa67ef53812e';
-
-// Utility function to refresh token
-async function refreshAuthToken(client, refreshToken) {
-  try {
-    const response = await axios.post(
-      'https://account-public-service-prod.ol.epicgames.com/account/api/oauth/token',
-      `grant_type=refresh_token&refresh_token=${refreshToken}`,
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
-        },
-      }
-    );
-    const { access_token, refresh_token, expires_in } = response.data;
-    console.log(`[AUTH] Refreshed token for ${client.auth.sessions.get("fortnite").displayName}`.green);
-    return { accessToken: access_token, refreshToken: refresh_token, expiresIn: expires_in };
-  } catch (error) {
-    console.error(`[AUTH ERROR] Failed to refresh token: ${error.response?.data?.error || error.message}`.red);
-    throw error;
-  }
-}
-
 // Main execution
 (async () => {
   console.log(`[LOGS] Starting up Fortnite Bot Royale version ${currentVer}...`.blue)
@@ -191,28 +139,39 @@ async function refreshAuthToken(client, refreshToken) {
   let accountsobject = [];
   let index = 1;
 
+    
+  
   while (index <= 1) {
-
-    if (process.env[`refreshToken`] === undefined) {
-    console.log(`\n***** FIRST TIME SETUP *****\n[WARNING] Make sure to be signed into the Epic Games account that will serve as the bot account!! Use incognito mode, or another browser to make sure!\n[LOGIN] Open this website, copy the "authorizationCode", and paste it here.\n[LOGIN] The website: https://www.epicgames.com/id/api/redirect?clientId=3f69e56c7649492c8cc29f1af08a8a12&responseType=code`.red)
-  } else {
-    console.log(`[LOGIN] Login data detected`.blue)
-
+    
+  
+  let auth;
+  try {
+      const data = await fs.readFile('./deviceAuth.json', 'utf8');
+      auth = { deviceAuth: JSON.parse(data) };
+      console.log(`[LOGIN] Login data found.`.blue)
+  } catch (e) {
+      auth = { authorizationCode: async () => Client.consoleQuestion(`\n***** FIRST TIME SETUP *****\n[WARNING] Make sure to be signed into the Epic Games account that will serve as the bot account!! Use incognito mode, or another browser to make sure!\n[LOGIN] Open this website, copy the "authorizationCode", and paste it here.\n[LOGIN] The website: https://www.epicgames.com/id/api/redirect?clientId=3f69e56c7649492c8cc29f1af08a8a12&responseType=code\n[LOGIN] Enter the code here: `.red) };
   }
-
-    const client = new FNclient({
+  
+  
+  const client = new FNclient({
       defaultStatus: "Fortnite",
+      auth,
       xmppDebug: false,
       platform: 'WIN',
       partyConfig: {
-        chatEnabled: true,
-        maxSize: 6
-      },
-      auth: {
-        refreshToken: process.env[`refreshToken`],
-    }
+          chatEnabled: true,
+          maxSize: 6
+      }
   });
 
+  client.on('deviceauth:created', async (da) => {
+      try {
+          await fs.writeFile('./deviceAuth.json', JSON.stringify(da, null, 2));
+      } catch (error) {
+          console.log('Error writing deviceAuth.json:', error);
+      }
+  });
     accountsobject.push(client);
     index++;
   }
@@ -220,76 +179,14 @@ async function refreshAuthToken(client, refreshToken) {
   await Promise.all(accountsobject.map(async (client, idx) => {
     let bIsMatchmaking = false;
     let timerstatus = false;
-
-    // Login and handle refresh token
-    try {
-      // Before logging in, remove any old data for previous login
-      if (client.auth.sessions.get("fortnite")?.refreshToken) {
-        removeAccountInfo(client.auth.sessions.get("fortnite").refreshToken);
-      }
-
       await client.login();
       const FNusername = client.auth.sessions.get("fortnite").displayName;
 
-    //  const accountId = client.auth.sessions.get("fortnite").accountId;
-      const refreshToken = client.auth.sessions.get("fortnite").refreshToken;
-     // const deviceId = client.auth.sessions.get("fortnite").deviceId || crypto.randomUUID(); // Generate if not provided
-     // const secret = client.auth.sessions.get("fortnite").secret || crypto.randomBytes(16).toString('hex'); // Generate if not provided
-
-      if (refreshToken) {
-        removeAccountInfo(refreshToken); // Ensure old data is gone
-        const envPath = path.resolve(__dirname, '.env');
-        let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
-        const envConfig = dotenv.parse(envContent);
-
-      
-       // envConfig[`accountId`] = accountId;
-       // envConfig[`deviceId`] = deviceId;
-       // envConfig[`secret`] = secret;
-        envConfig[`refreshToken`] = refreshToken;
-
-        const updatedEnv = Object.entries(envConfig).map(([key, value]) => `${key}=${value}`).join('\n');
-        fs.writeFileSync(envPath, updatedEnv, 'utf8');
-        console.log(`[ENV] Stored new authentification data for ${FNusername}`.green);
         console.log(`[LOGIN] Logged in as ${FNusername}`.green);
-      }
-    } catch (error) {
-      console.error(`[LOGIN ERROR] Initial login failed: ${error.message}`.red);
-      return;
-    }
+
 
     client.setStatus(bot_invite_status, bot_invite_onlinetype);
-
-    client.on('auth:expired', async () => {
-      console.log(`[AUTH] Access token expired for ${client.auth.sessions.get("fortnite").displayName}`.yellow);
-      try {
-        const refreshToken = client.auth.sessions.get("fortnite").refreshToken;
-        const { accessToken, refreshToken: newRefreshToken } = await refreshAuthToken(client, refreshToken);
-
-        // Update client session
-        client.auth.sessions.get("fortnite").accessToken = accessToken;
-        client.auth.sessions.get("fortnite").refreshToken = newRefreshToken;
-
-        // Update .env with new refresh token
-        //const accountId = client.auth.sessions.get("fortnite").accountId;
-        //removeAccountInfo(accountId); // Remove old data
-        const envPath = path.resolve(__dirname, '.env');
-        let envContent = fs.readFileSync(envPath, 'utf8');
-        const envConfig = dotenv.parse(envContent);
-
-       // envConfig[`accountId${botIndex}`] = accountId;
-       // envConfig[`deviceId${botIndex}`] = client.auth.sessions.get("fortnite").deviceId;
-       // envConfig[`secret${botIndex}`] = client.auth.sessions.get("fortnite").secret;
-        envConfig[`refreshToken`] = newRefreshToken;
-
-        const updatedEnv = Object.entries(envConfig).map(([key, value]) => `${key}=${value}`).join('\n');
-        fs.writeFileSync(envPath, updatedEnv, 'utf8');
-        console.log(`[AUTH] Session refreshed and .env updated for ${client.auth.sessions.get("fortnite").displayName}`.green);
-      } catch (error) {
-        console.error(`[AUTH ERROR] Failed to refresh session: ${error.message}`.red);
-        await disconnectBot(client);
-      }
-    });
+    
 
     // Party initialization
     try {
