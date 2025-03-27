@@ -203,7 +203,7 @@ async function refreshAuthToken(client, refreshToken) {
     const client = new FNclient({
       defaultStatus: "Fortnite",
       xmppDebug: false,
-      platform: 'AND',
+      platform: 'WIN',
       partyConfig: {
         chatEnabled: true,
         maxSize: 6
