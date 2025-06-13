@@ -1,3 +1,5 @@
+DOESNT WORK AS OF 13/06/2025
+
 # Fortnite Bot Royale
 This is based on AjaxFNC's [NexBL V1](https://github.com/AjaxFNC-YT/NexBL-V1/), i've updated a lot of code to try to stabilize the bot.<br>
 <br>
